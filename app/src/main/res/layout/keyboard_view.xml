@@ -6,7 +6,7 @@
 
 
 
-    <android.inputmethodservice.KeyboardView
+    <com.android.mykeyboard.keyboard.MyKeyboardView
         android:id="@+id/keyboardview"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

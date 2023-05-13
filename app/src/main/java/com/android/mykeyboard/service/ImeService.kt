@@ -1,50 +1,57 @@
 package com.android.mykeyboard.service
 
-
 import android.inputmethodservice.InputMethodService
 import android.inputmethodservice.Keyboard
 import android.inputmethodservice.KeyboardView
+import android.view.LayoutInflater
 import android.view.View
-import android.widget.Button
 import com.android.mykeyboard.R
-import com.android.mykeyboard.utils.QwertyConstants.Companion.characterMap
+import com.android.mykeyboard.databinding.KeyboardViewBinding
+import com.android.mykeyboard.keyboard.MyKeyboardView
+import com.android.mykeyboard.utils.QwertyConstants.getCharacter
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
+class ImeService : InputMethodService(), KeyboardView.OnKeyboardActionListener {
 
-class ImeService : InputMethodService(),KeyboardView.OnKeyboardActionListener {
+    private lateinit var binding: KeyboardViewBinding
+    private lateinit var myKeyboard: MyKeyboardView
+
     override fun onCreateInputView(): View {
+        binding = KeyboardViewBinding.inflate(LayoutInflater.from(this), null, false)
 
-        val myKeyboardView: View = layoutInflater.inflate(R.layout.keyboard_view, null)
-        val myKeyboard: KeyboardView = myKeyboardView.findViewById(R.id.keyboardview)
+        myKeyboard = binding.keyboardview as MyKeyboardView
         myKeyboard.keyboard = Keyboard(this, R.xml.qwerty_en)
         myKeyboard.isPreviewEnabled = false
-        setInputView(myKeyboardView)
+        setInputView(binding.root)
         myKeyboard.setOnKeyboardActionListener(this)
-        return myKeyboardView
+
+        return binding.root
     }
-
-
 
     companion object {
         private const val TAG = "MyIMService"
     }
 
     override fun onPress(primaryCode: Int) {
-
     }
 
     override fun onRelease(primaryCode: Int) {
     }
 
+    //Using coroutines make custom keyboard more responsive and faster by running text committing operations asynchronously without blocking the main UI thread.
     override fun onKey(primaryCode: Int, keyCodes: IntArray?) {
         val inputConnection = currentInputConnection
-        if (inputConnection != null) {
-            val character = characterMap[primaryCode]
-            if (character != null) {
-                inputConnection.commitText(character.toString(), 1)
+        val character = getCharacter(primaryCode)
+        when {
+            inputConnection != null && character != null -> {
+                CoroutineScope(Dispatchers.Default).launch {
+                    inputConnection.commitText(character.toString(), 1)
+                }
             }
         }
     }
-
     override fun onText(text: CharSequence?) {
     }
 
